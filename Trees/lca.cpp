@@ -1,37 +1,46 @@
-#include <bits/stdc++.h>
+#include<bits/stdc++.h>
+#define int long long 
+#define endl '\n'
+#define yes cout<<"YES"<<endl;
+#define no cout<<"NO"<<endl;
 using namespace std;
-
-vector<vector<int>> parent;
-vector<int> depth;
-vector<vector<int>> adj;
-
-void dfs(int node, int par, int d){
+ 
+// implement lca and binary lifting
+ 
+void dfs(int node, int par, vector<vector<int>> &adj, vector<vector<int>> &parent, vector<int> &depth, int d){
     parent[node][0] = par;
-    for(int i=1; i<=20; i++){
-        if(parent[node][i-1] != -1){
-            parent[node][i] = parent[parent[node][i-1]][i-1];
-        }
-        else{
-            parent[node][i] = -1;
-        }
+    depth[node] = d;
+    for(int i=1; i<20; i++){
+        if(parent[node][i-1] != -1) parent[node][i] = parent[parent[node][i-1]][i-1];
     }
     for(auto &it: adj[node]){
         if(it == par) continue;
-        depth[it] = d + 1;
-        dfs(it, node, d+1);
+        dfs(it, node, adj, parent, depth, d+1);
     }
 }
- 
-int lca(int a, int b){
-    if(depth[a] < depth[b]) swap(a, b);
-    int d = depth[a] - depth[b];
-    for(int i=20; i>=0; i--){
-        if(d&(1<<i)){
-            a = parent[a][i];
+
+// this accepts parameter k in one-based indexing --> k = 1, immediate parent
+int kthParent(int node, int k, vector<vector<int>> &parent){
+    for(int i = 19; i >= 0; i--){
+        if(node == -1) return node;
+        if(k & (1 << i)){
+            node = parent[node][i];
         }
     }
+    return node;
+}
+ 
+int findlca(int a, int b, vector<vector<int>> &parent, vector<int> &depth){
+    int levela = depth[a];
+    int levelb = depth[b];
+    if(levela > levelb) swap(a, b);
+ 
+    int diff = levelb - levela;
+    a = kthParent(a, diff, parent);
+ 
     if(a == b) return a;
-    for(int i=20; i>=0; i--){
+ 
+    for(int i=19; i>=0; i--){
         if(parent[a][i] != parent[b][i]){
             a = parent[a][i];
             b = parent[b][i];
@@ -39,44 +48,41 @@ int lca(int a, int b){
     }
     return parent[a][0];
 }
-
-int kthParent(int node,int k){
-    if(k == 0) return node;
-    if(node == -1) return -1;
-    while(k > 0){
-        int log_val = log2(k);
-        node = parent[node][log_val];
-        if(node == -1) return -1;
-        k -= (1<<log_val);
-    }
-    return node;
-}
  
-int main() {
-    int n, q;
-    cin>>n>>q;
-
-    parent.resize(n, vector<int>(21, 0));
-    depth.resize(n, 0);
-    adj.resize(n, vector<int>());
-
+signed main(){
+    int n;
+    cin>>n;
+ 
+    int q;
+    cin>>q;
+ 
+    vector<vector<int>> adj(n);
+    vector<vector<int>> parent(n, vector<int>(20, -1));
+    vector<int> depth(n, 0);
+ 
     for(int i=1; i<n; i++){
         int a;
         cin>>a;
         a--;
+ 
         parent[i][0] = a;
+ 
         adj[i].push_back(a);
         adj[a].push_back(i);
     }
-
-    dfs(0, -1, 0);
-
-
-    // to tell distance between two nodes
-    int x, y;
-    cin>>x>>y;
-    int temp = lca(x, y);
-    cout<<depth[x] + depth[y] - 2*(depth[temp])<<endl;
+ 
+    dfs(0, -1, adj, parent, depth, 0);
+ 
+    while(q--){
+        int node, level;
+        cin>>node>>level;
+        node--;
+ 
+        int temp = kthParent(node, level, parent);
+ 
+        if(temp == -1) cout<<temp<<endl;
+        else cout<<temp+1<<endl;
+    }
  
     return 0;
 }
